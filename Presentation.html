@@ -11775,16 +11775,12 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Author:-Pedram-Daee---pedram.daee@aalto.fi-">Author: Pedram Daee -<em> pedram.daee@aalto.fi </em><a class="anchor-link" href="#Author:-Pedram-Daee---pedram.daee@aalto.fi-">&#182;</a></h3><h1 id="Unity-Assignment---install-probability-prediction">Unity Assignment - install probability prediction<a class="anchor-link" href="#Unity-Assignment---install-probability-prediction">&#182;</a></h1><p>Goal: Predict install probability for add install event given a set of features.</p>
-<h2 id="Task-description">Task description<a class="anchor-link" href="#Task-description">&#182;</a></h2><p>The data is a sample from our production environment. Each row refers to an impression (start of a video ad belonging to the specific campaign), and includes input features and an install label indicating whether the impression resulted in the install of the advertised game or not.</p>
-<p>Input features and install label are provided for the training data (trainingData.csv). The test data (testData.csv) includes only the input features. Your task is to predict install probability for all the available impressions in the test data.</p>
-<p>Return:</p>
-<ol>
-<li>Predicted install probability for each impression Id in the test data.</li>
-<li>Source code for your solution. Feel free to select language/tools that you see appropriate.</li>
-<li>A report in which you explain/justify your choices and analyze your solution.</li>
-</ol>
-<p>Notice: There is no one single correct solution. You may also provide ideas how you would continue after your proposed solution.</p>
+<h3 id="Author:-Pedram-Daee---pedram.daee@aalto.fi-">Author: Pedram Daee -<em> pedram.daee@aalto.fi </em><a class="anchor-link" href="#Author:-Pedram-Daee---pedram.daee@aalto.fi-">&#182;</a></h3><h1 id="Ad-Install-Probability-Prediction">Ad Install Probability Prediction<a class="anchor-link" href="#Ad-Install-Probability-Prediction">&#182;</a></h1><p>Goal: Predict install probability for ad install event given a set of features. Each row of data is the description of the impression and whether it concluded with an install event or not.</p>
+<p>This notebook goes through a typical data analysis workflow. There are two main sections:</p>
+<ul>
+<li>The data: description of the data and feature engineering methods used. </li>
+<li>The model: description of the preprocessing and modelling decisions.</li>
+</ul>
 
 </div>
 </div>
@@ -11797,9 +11793,9 @@ div#notebook {
 <div class=" alert alert-warning">
     <b>tl;dr.</b> 
 
-  <li>The ultimate task is to recommend ads but the problem statement is not acknowledging this. Rather than modelling $p(y|x)$, where $y$ is the install event and $x$ contains the features, it would be more suitable to model $p(y|x,a)$ from the data. The conceptual difference is that $x$ is assumed to be given and we do not have any control in its creation, while $a$ is our action. Currently, $a$ is provided as feature in $x$. This is my main criticism to the task, as I think the prediction and recommendation should be modelled jointly (and not having a model for recommending campaigns and then using the recommended campaings as part of the feature space of a model for predicting installs). </li>
-  <li>To create a representation for the action, we could have exploited the user interactions with the advertised ads by creating user ID vs campaign ID matrix and use a function (e.g., latent factorization) of it for action representation, but the user ID is missing from the data. </li>
-  <li>User ID (history of campaigns recommended) is missing from the data but potentially important. I guess this is available as the data contains features such as installCount.</li>
+  <li>The ultimate task is to recommend ads but the problem statement is not acknowledging this. Rather than modelling $p(y|x)$, where $y$ is the install event and $x$ contains the features, it would be more suitable to model $p(y|x,a)$ from the data. The conceptual difference is that $x$ is assumed to be given and we do not have any control in its creation, while $a$ is our action. Currently, $a$ is provided as a feature in $x$. This is my main criticism to the task, as I think the prediction and recommendation should be modelled jointly (and not having a model for recommending campaigns and then using the recommended campaings as part of the feature space of a model for predicting installs). </li>
+  <li>To create a representation for the action, we could have exploited the user interactions with the advertised ads by creating user ID vs campaign ID matrix and use a function (e.g., latent factorization) of it for action representation, but the user ID is missing from the data. However, user ID (history of campaigns recommended) is missing from the data but potentially important. I guess this is available as the data contains features such as installCount.</li>
+    <li> The install probability then can be modelled as a function of both $p(y|x)$ (prior install probability; what is done in this assignment) and $p(y|a,hist,\theta)$ (a personalized model of the user, given the history of interaction of the user and some unknown parameters $\theta$). The uncertainty in the second component can then help the decision making process (e.g., recommend an ad to gain more information about the user or to exploit the current best found ad).</li>
   <li>I have done many quick sub-optimal hacks for feature engineering. These hacks are not the best ways to handle the data. My aim was to try to not add many features for categorical data coding at this stage, as I was more interested to just investigate a baseline solution and the feature contributions.</li>
   <li>Quick summary of engineerings: I am removing the two time features and creating a new one expressing the difference between those two in minutes (also took care of nulls and added suggestions for other ways to exploit the time features), I am removing some of the categorical features, and replacing others by values such as frequency, I am replacing the software version by the first integer in the string, I am replacing countries by a feature representing prior knowledge for per country install ratio (a bit cheating),... </li>
 </div>
@@ -11886,14 +11882,14 @@ Percentage of installs: 0.012006,
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>The training data contains $n=2206990$ instances with $d=16$ features and the corresponding responses $y \in \{0,1\}$  indicates whether install was observed (install=1) or was not observed (install=0) after impression. The data set is very unbalanced as the occurrence of an install event is only $\%1.2$.</p>
-<p>Let's print the first five rows of the dataset.</p>
+<p>The following line prints the first five rows of the dataset.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[100]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">with</span> <span class="n">pd</span><span class="o">.</span><span class="n">option_context</span><span class="p">(</span><span class="s1">&#39;display.max_rows&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;display.max_columns&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;display.width&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">):</span>
@@ -11901,43 +11897,6 @@ Percentage of installs: 0.012006,
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                         id                      timestamp                campaignId platform  \
-0  5c36658fb58fad351175f0b6  2019-01-09T21:20:15.943+00:00  59687f0d896a6b0e5ce6ea15      ios   
-1  5c38d5ab1c16172870186b5a  2019-01-11T17:43:07.609+00:00  59687f0d896a6b0e5ce6ea15      ios   
-2  5c38815de8f4e50e256e4f9c  2019-01-11T11:43:25.168+00:00  59687f0d896a6b0e5ce6ea15      ios   
-3  5c409ace532d5806d2c6a5e6  2019-01-17T15:10:06.420+00:00  59687f0d896a6b0e5ce6ea15      ios   
-4  5c3904b92d798c41e7f3088a  2019-01-11T21:03:53.145+00:00  59687f0d896a6b0e5ce6ea15      ios   
-
-  softwareVersion  sourceGameId country  startCount  viewCount  clickCount  installCount  \
-0          11.4.1       1373094      US          25         24           0             2   
-1            12.1       2739989      US          10          9           2             0   
-2          12.1.2       1373094      US          27         26           0             0   
-3          12.1.2       1217749      US          15         14           2             0   
-4          12.0.1       1373094      US          20         18           0             0   
-
-                       lastStart  startCount1d  startCount7d connectionType deviceType  install  
-0  2019-01-08T18:49:48.129+00:00             1             8       cellular  iPhone8,2        0  
-1  2019-01-09T21:20:22.855+00:00             1             4       cellular  iPhone9,1        0  
-2  2019-01-09T10:42:08.446+00:00             1             2       cellular  iPhone7,1        0  
-3  2019-01-16T19:58:11.636+00:00             3            14           wifi  iPhone7,2        0  
-4  2019-01-11T21:03:05.103+00:00            13            18       cellular  iPhone8,1        0  
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -12013,7 +11972,7 @@ number of installs in lastStart nulls: 2821
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>lastStart feature has a huge number of nulls where 2821 of those rows have install event (around 10 percent of the total rows with install event), therefore it is better to handle them properly, rather than just dropping the rows. I will take care of these in the next sections where we look deeper at individual features.</p>
+<p>lastStart feature has a huge number of nulls where 2821 of those rows have install event (around 10 percent of the total rows with install event), therefore it is better to handle them properly, rather than just dropping the rows. I will take care of these bellow where we look deeper at individual features.</p>
 <p>Let's look at the features one by one</p>
 
 </div>
@@ -12238,7 +12197,7 @@ Name: install, dtype: float64
 <li><strong>LastStart</strong>: the time of users last start event (any campaign) (I assume in UTC).</li>
 <li>These are the two time features in the data. Potentially can be useful as:</li>
 <li>1) their interaction might have an influence on the response variable. </li>
-<li>2) user's behavior may depend on the time of the day (e.g., people might be more likely to install an app in the evening or over the weekend than working hours(?)). To test this, we also need to convert the UTC time zone to a local time zone using data in the "country" feature and also add new features (e.g., "weekend") to the data.  </li>
+<li>2) user's behavior may depend on the time of the day (e.g., people might be more likely to install an app in the evening or over the weekend than working hours(?)). To test this, we also need to convert the UTC time zone to a local time zone using data in the "country" feature and also add new features (e.g., "weekend" or "holiday") to the data.  </li>
 <li>For now I only consider the first point due to time constrains. </li>
 <li>In the following code box, first I replace the nan values in 'lastStart' with the corresponding values in 'timestamp' and then I define a new feature ('epoch_diff') as the difference in minutes between the 'timestamp' and 'lastStart', and drop the old features. </li>
 </ul>
@@ -12288,7 +12247,7 @@ Name: install, dtype: float64
 <li>The id of the advertising campaign. </li>
 <li>I guess this is all we have about the recommended ads. </li>
 <li>There are 5704 unique campaigns.</li>
-<li>The dataset is biased based on this feature, as I the campainId is selected by an intelligent algorithm.</li>
+<li>The dataset is biased based on this feature, since the campainId is selected by an intelligent algorithm.</li>
 <li>The following code box looks at the distribution of campaigns over number of appearances and number of installs.</li>
 </ul>
 
@@ -12364,8 +12323,8 @@ Name: install, dtype: float64
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
-<li>The figure shows three things: 1) the correlation between number of installs and number of recommendation of the campaigns 2) huge number of campaigns have only been recommended very few times 3) A bit concerning point that there are a few extremely frequent recommended campaigns that have lower than average install ratio, while some better than average campaigns are not recommended that frequently. This may (or may not) indicate a sub-optimal performance in the recommendation part (see the blue point at 30000).</li>
-<li>We need to find a good representation for campaigns (see next box)</li>
+<li>The figure shows three things: 1) the correlation between number of installs and number of recommendation of the campaigns 2) huge number of campaigns have only been recommended very few times 3) A bit concerning point that there are a few extremely frequent recommended campaigns that have lower than average install ratio, while some better than average campaigns are not recommended that frequently. This may (or may not) indicate a sub-optimal performance in the recommendation part (e.g., see the blue point at 30000).</li>
+<li>We need to find a good representation for campaigns (see next box).</li>
 </ul>
 
 </div>
@@ -12380,7 +12339,7 @@ Name: install, dtype: float64
     <b>What I would have done...</b> 
 
 <br />
-It would be crucially important for the core recommendation task to have a feature representation for campaigns. It seems that the data does not have this information. I can think of two ways to do this: (i) try to generate features from the campaign itself (e.g., from the textual description of the campaign or the video).(ii) generate features for campaign based on the interaction data (e.g., if two users installed a couple of similar campaigns, then the information about one user can be generalized to the other one for the recommendation). It seems that approach (i) has not been successful. However, it should be possible to exploit the interaction data in (ii). For this, I would need to have a unique user ID to be able to create the sparse matrix of campaignId vs. user_id, where the elements indicate install or no-install event. I could then use matrix factorization and try to estimate this big matrix with two simpler matrix (e.g., AV), and learn these simpler (low dimensional) matrices by minimizing the reconstruction error. A simpler solution then would be to use rows of A as a feature representation for campaigns.   
+It would be crucially important for the core recommendation task to have a feature representation for campaigns. It seems that the data does not have this information. I can think of two ways to do this: (i) try to generate features from the campaign itself (e.g., from the textual description of the campaign or the video).(ii) generate features for campaign based on the interaction data (e.g., if two users installed a couple of similar campaigns, then the information about one user can be generalized to the other one for the recommendation). It seems that approach (i) has not been successful. However, it should be possible to exploit the interaction data in (ii). For this, I would need to have a unique user ID to be able to create the sparse matrix of campaignId vs. user_id, where the elements indicate install or no-install event. I could then use matrix factorization and try to estimate this big matrix with two simpler matrix (e.g., AV), and learn these simpler (low dimensional) matrices by minimizing the reconstruction error. A simple solution then would be to use rows of A as a feature representation for campaigns.   
 </div>
 </div>
 </div>
@@ -12708,7 +12667,7 @@ Name: platform, dtype: int64
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
-<li>I will use the ratio of installs of each country as a new feature value. This to some extent justifiable as it encapsulates the prior knowledge we have about each country (e.g., people in the country "TR" are less likely to install a recommendation). At the same time it is a bit dangerous since we use the training data label information here. The following code box creates this new feature and removes the old one.</li>
+<li>I will use the ratio of installs of each country as a new feature value. This is to some extent justifiable as it encapsulates the prior knowledge we have about each country (e.g., people in the country "TR" are less likely to install a recommendation). At the same time it is a bit dangerous since we use the training data label information here. The following code box creates this new feature and removes the old one (note: It would have make sense to also have a feature for frequency to also cover sufficient statistics for the accuracy of the ratio).</li>
 </ul>
 
 </div>
@@ -12728,7 +12687,7 @@ Name: platform, dtype: int64
 <span class="c1"># add the new feature to the data frame</span>
 <span class="n">tr_data_m</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;country_ratio&#39;</span><span class="p">,</span> <span class="n">country_freq</span><span class="p">)</span>
 
-<span class="c1"># remove &#39;sourceGameId&#39; column</span>
+<span class="c1"># remove &#39;country&#39; column</span>
 <span class="n">tr_data_m</span> <span class="o">=</span> <span class="n">tr_data_m</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;country&quot;</span><span class="p">)</span>
 </pre></div>
 
@@ -12814,8 +12773,8 @@ Name: connectionType, dtype: int64
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="deviceType:">deviceType:<a class="anchor-link" href="#deviceType:">&#182;</a></h3><ul>
-<li>Device model (total of 22476 models)</li>
-<li>Would be interesting to see if there is a different install behavior between people with more high-tech devices or people with tablets, or different brands (Iphone vs. Samsung). The following code block looks at the install ratio of most popular devices. </li>
+<li>Device model (total of 22476 models).</li>
+<li>Would be interesting to see if there is a different install behavior between people with more high-tech devices or people with tablets, or different brands (iphone vs. Samsung). The following code block looks at the install ratio of most popular devices. </li>
 <li>Due to time constrains, I will remove this column for now (may get back to this later).</li>
 </ul>
 
@@ -12880,7 +12839,7 @@ Name: connectionType, dtype: int64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now let's look how the data looks like after the feature modifications.</p>
+<p>Now let's look at the data after all the feature modifications.</p>
 
 </div>
 </div>
@@ -12942,7 +12901,7 @@ Name: connectionType, dtype: int64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>And finally, save the data as a csv file. I also need to save the dictionaries and other variable necessary for feature transformation (as I need to do the same on the test data).</p>
+<p>And finally, save the data as a csv file. I also need to save the dictionaries and other variables necessary for feature transformation as I will need to do the same transformations on the test data (however, I am not saving them at the moment).</p>
 
 </div>
 </div>
@@ -12971,9 +12930,9 @@ Name: connectionType, dtype: int64
 
   <li> The data is extremely unbalanced, methods with high flexibility may overfit and simpler methods will classify most points to no install class. </li>
   <li> I use under-sampling of the no install class as a quick solution to the problem. There are better (more expensive) ways to handle this but given my time this is fine. </li>
-  <li> I only consider two baseline like methods in the assignment: decision tree and logistic regression, and an advanced model, random forest. I could investigate more powerful methods, or spend more time on hyperparameter tuning, but the time is limited (and I also believe that spending more time on feature engineering and extracting more features (as explained in the previous section) would probably be more fruitful.</li>
-  <li> After balancing, I use 5-fold cross validation for evaluation of each method and then juts divide the training data to 2 to investigate the outputs.</li>
-  <li> I use ROC and confusion matrix as the performance measure criteria</li>
+  <li> I only consider two baseline like methods in the assignment: decision tree and logistic regression, and one advanced model, random forest. I could investigate more powerful methods, or spend more time on hyperparameter tuning, but the time is limited and I also believe that spending more time on feature engineering and extracting more features (as explained in the previous section) would probably be more fruitful.</li>
+  <li> After balancing, I use 5-fold cross validation for evaluation of each method and then just divide the training data to 2 to investigate the outputs.</li>
+  <li> I use ROC (true positive rate (TPR) against the false positive rate (FPR); kind of suitable for unbalanced data, but we are balancing the data anyway!) and confusion matrix as the performance measure criteria.</li>
   <li> Discussions about the results and modelling decisions are provided.</li>
 
 </div>
@@ -12984,7 +12943,7 @@ Name: connectionType, dtype: int64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Following code box reads the modified training data from the CSV file and remove the "index" and label ("install") columns from the data.</p>
+<p>The following code box reads the modified training data from the CSV file and removes the "index" and label ("install") columns from the data.</p>
 
 </div>
 </div>
@@ -13101,7 +13060,6 @@ number of data in class 0: 2180393
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>The following box performs under-sampling to take care of the unbalanceness of the data. This can be quite harmful as we are losing information by throwing the data from class 0 out. However, for now I prefer to go with this quick solution. The new data are stored in X_resampled, Y_resampled.</p>
 <ul>
-<li>Ideally this should have been done in the cross validation loop but I will do it only once at the beginning.</li>
 <li>For now I am just using random undersampling. A better approach would be to cluster the data of class 0 and then use the prototypes as the representations of the class. This would be a bit expensive computationally (as k-means is expensive if there are many data), but doable (codes for this are commented bellow). See <a href="https://imbalanced-learn.readthedocs.io/en/stable/under_sampling.html">https://imbalanced-learn.readthedocs.io/en/stable/under_sampling.html</a> for more information.</li>
 </ul>
 
@@ -13129,6 +13087,7 @@ number of data in class 0: 2180393
 <span class="n">rus</span> <span class="o">=</span> <span class="n">RandomUnderSampler</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">X_resampled</span><span class="p">,</span> <span class="n">Y_resampled</span> <span class="o">=</span> <span class="n">rus</span><span class="o">.</span><span class="n">fit_resample</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 <span class="n">X_resampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X_resampled</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;number of data for each class after resampling:&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">Y_resampled</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 </pre></div>
 
@@ -13177,7 +13136,7 @@ number of data in class 0: 2180393
 
 <span class="n">logreg</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s1">&#39;lbfgs&#39;</span><span class="p">)</span>
 
-<span class="n">roc_auc_scores</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">logreg</span><span class="p">,</span> <span class="n">X_resampled</span><span class="p">,</span> <span class="n">Y_resampled</span><span class="p">,</span> <span class="n">scoring</span> <span class="o">=</span> <span class="s1">&#39;roc_auc&#39;</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">roc_auc_scores</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">logreg</span><span class="p">,</span> <span class="n">X_resampled</span><span class="p">,</span> <span class="n">Y_resampled</span><span class="p">,</span> <span class="n">scoring</span> <span class="o">=</span> <span class="s1">&#39;roc_auc&#39;</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">roc_auc_scores</span><span class="p">)</span>    
 </pre></div>
 
@@ -13497,8 +13456,7 @@ Normalized confusion matrix
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Decision-tree-on-balanced-data:">Decision tree on balanced data:<a class="anchor-link" href="#Decision-tree-on-balanced-data:">&#182;</a></h3><ul>
-<li>Let's run decision tree.</li>
-<li>First we need to find a good depth for the tree so that we would not overfit.</li>
+<li>Let's run decision tree. First we need to find a good depth for the tree so that we would not overfit.</li>
 </ul>
 
 </div>
@@ -13571,7 +13529,7 @@ Normalized confusion matrix
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Based on the above results, it seems that depth = 6 or 7 are reasonable choices. In the next block we use the training and validation data from the previous section to visualize the ROC curve and confusion matrix for the decision tree method.</p>
+<p>Based on the above results, it seems that depth = 6 or 7 are reasonable choices. In the next block we use the training and validation data from the previous section to visualize the ROC curve and confusion matrix for decision tree.</p>
 
 </div>
 </div>
@@ -13916,6 +13874,7 @@ Normalized confusion matrix
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Test-data-prediction">Test data prediction<a class="anchor-link" href="#Test-data-prediction">&#182;</a></h2><p>Given the above validation results, we will use the random forest for the test data install probability prediction.</p>
 <ul>
+<li><strong>Note:</strong> This was not at all a clear win for random forest, as it seems that the baseline methods can also achieve almost the same average score. If I had time I would look deeper at each method and try to do a better validation before selecting the final method. Furthermore, as a general rule of thumb, the simpler methods should be more favorable in this situation. Anyway, I decided to go with random forest because I also consider the resulting feature importance to be more sensible. </li>
 <li>Please note that we could have used more advanced methods (such as supervised deep learning methods) to learn a better feature representation and mapping for this task, However, for this assignment I am fine with the current report given my personal time.</li>
 </ul>
 <p>Let's load the test data and also look at the number of nulls).</p>
@@ -13925,10 +13884,11 @@ Normalized confusion matrix
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[130]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">csv</span>
+
 <span class="n">test_filename</span> <span class="o">=</span> <span class="s2">&quot;test_data.csv&quot;</span>
 <span class="c1"># load the whole test data (no need to chunk it!)</span>
 <span class="n">test_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">test_filename</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">,</span><span class="n">engine</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_NONE</span><span class="p">)</span>
@@ -13982,13 +13942,13 @@ None
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[131]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of nulls per feature:&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">test_data</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="k">with</span> <span class="n">pd</span><span class="o">.</span><span class="n">option_context</span><span class="p">(</span><span class="s1">&#39;display.max_rows&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;display.max_columns&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;display.width&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">test_data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<span class="c1">#with pd.option_context(&#39;display.max_rows&#39;, 5, &#39;display.max_columns&#39;, None, &#39;display.width&#39;, 100):</span>
+<span class="c1">#    print(test_data.head())</span>
 </pre></div>
 
 </div>
@@ -14023,26 +13983,6 @@ startCount7d            0
 connectionType          0
 deviceType              2
 dtype: int64
-                         id                      timestamp                campaignId platform  \
-0  5c458a1e2fba59f69f8edd83  2019-01-21T09:00:14.357+00:00  58acf10efab39d013ad89c49      ios   
-1  5c3af59dd750973fefae73e2  2019-01-13T08:23:57.039+00:00  58acf10efab39d013ad89c49      ios   
-2  5c414bd0f8673f5fd3e5b122  2019-01-18T03:45:20.175+00:00  58acf10efab39d013ad89c49      ios   
-3  5c360cb1f782910750c7376c  2019-01-09T15:01:05.852+00:00  58acf10efab39d013ad89c49      ios   
-4  5c42a31dfa3f9065d6d3eba3  2019-01-19T04:10:05.419+00:00  58acf10efab39d013ad89c49      ios   
-
-  softwareVersion  sourceGameId country  startCount  viewCount  clickCount  installCount  \
-0          11.2.6       2977193      CN          32          9           5             5   
-1           9.3.5       1484791      CN         104         84           5             0   
-2           8.1.1       1772805      CN          93         81          16             2   
-3            12.1       1298799      CN          13          8           6             0   
-4            11.3       1148369      CN           4          3           0             0   
-
-                       lastStart  startCount1d  startCount7d connectionType deviceType  
-0  2019-01-21T08:59:34.356+00:00            32            32           wifi    iPad4,1  
-1  2019-01-13T07:17:59.888+00:00            12            93           wifi    iPad3,3  
-2  2019-01-18T03:41:24.122+00:00            45            92           wifi    iPad4,1  
-3  2019-01-09T15:01:04.239+00:00             4             5           wifi    iPad4,4  
-4  2019-01-19T04:09:32.142+00:00             4             4           wifi    iPad5,1  
 </pre>
 </div>
 </div>
@@ -14055,7 +13995,7 @@ dtype: int64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We need to perform the same operations done on training data on the test data. However, we need to use statistics, and dictionaries that were learned from the training data. I would have ideally implemented those as functions and here would just call them again (but did not do that here). The following is the preprocessing steps:</p>
+<p>We need to perform the same operations done on training data on the test data. However, we need to use statistics and dictionaries that were learned from the training data. I would have ideally implemented those as functions and here would just call them again (but did not do that here due to time constraints). The following is the preprocessing steps:</p>
 
 </div>
 </div>
@@ -14200,7 +14140,7 @@ dtype: int64
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[134]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Load the modified test data</span>
@@ -14209,40 +14149,9 @@ dtype: int64
 <span class="c1"># let&#39;s look at the test data</span>
 <span class="k">with</span> <span class="n">pd</span><span class="o">.</span><span class="n">option_context</span><span class="p">(</span><span class="s1">&#39;display.max_rows&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;display.max_columns&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;display.width&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">test_data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
-<span class="c1">#test_data</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>   country_ratio  gameId_freq  softwareVersion_num  campain_freq  platform  startCount  viewCount  \
-0       0.013523        220.0                 11.0           1.0         1          32          9   
-1       0.013523         65.0                  9.0           1.0         1         104         84   
-2       0.013523         18.0                  8.0           1.0         1          93         81   
-3       0.013523          3.0                 12.0           1.0         1          13          8   
-4       0.013523        489.0                 11.0           1.0         1           4          3   
-
-   clickCount  installCount  startCount1d  startCount7d  epoch_diff  wifi  cellular  
-0           5             5            32            32           1     1         0  
-1           5             0            12            93          66     1         0  
-2          16             2            45            92           4     1         0  
-3           6             0             4             5           0     1         0  
-4           0             0             4             4           1     1         0  
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14277,7 +14186,7 @@ dtype: int64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's evaluate the test data using the best method from validation phase, i.e., the random forest.</p>
+<p>Let's evaluate the test data using the best method from validation phase, i.e., the random forest (not strongly the best, but fine).</p>
 
 </div>
 </div>
@@ -14294,8 +14203,6 @@ dtype: int64
 <span class="c1"># predict the test data</span>
 <span class="n">y_pred_test</span> <span class="o">=</span> <span class="n">rf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
 <span class="n">Y_test_predicted_prob</span> <span class="o">=</span> <span class="n">rf</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_test</span><span class="p">)[:,</span><span class="mi">1</span><span class="p">]</span>
-<span class="c1">#print(y_pred_test)</span>
-<span class="c1">#print(Y_test_predicted_prob)</span>
 </pre></div>
 
 </div>
@@ -14319,9 +14226,6 @@ dtype: int64
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">df_temp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;install&quot;</span><span class="p">:</span> <span class="n">Y_test_predicted_prob</span><span class="p">})</span>
 <span class="n">df_temp</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;./Y_pred_test.csv&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1">#print(np.sum(y_pred_test==1))</span>
-<span class="c1">#print(Y_test_predicted_prob)</span>
-<span class="c1">#print(np.sum(y_pred_test==1)/y_pred_test.shape[0])</span>
 </pre></div>
 
 </div>
